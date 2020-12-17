@@ -1,40 +1,41 @@
-/*
-*       
-*       To run the tests on Repl.it, set `NODE_ENV` to `test` 
-*       without quotes in the `.env` file. 
-*       To run the tests in the console, open the terminal 
-*       with [Ctrl + `] (backtick) and run the command `npm run test`.
-*
-*/
-
 import Player from '../public/Player.mjs';
 import Collectible from '../public/Collectible.mjs';
 const chai = require('chai');
 const assert = chai.assert;
 const { JSDOM } = require('jsdom');
 
-suite('Unit Tests', () => {
-  suiteSetup(() => {
-    // Mock the DOM for testing and load Solver
+suite('Unit Tests', function() {
+  suiteSetup(function() {
+    // Mock the DOM for testing.
     return JSDOM.fromFile('./views/index.html')
-      .then((dom) => {
+      .then(function(dom) {
 
         global.window = dom.window;
         global.document = dom.window.document;
       });
   });
 
-  suite('Collectible class', () => {
-    test('Collectible class generates a collectible item object.', done => {
-      const testItem = new Collectible({ x: 100, y: 100, id: Date.now() });
+  suite('Collectible class', function() {
+    test('should generate a collectible item object.', function(done) {
+      const testItem = new Collectible({
+        x: 100,
+        y: 100,
+        id: Date.now()
+      });
 
+      // console.log(testItem);
       assert.isObject(testItem);
       done();
     });
 
-    test('Collectible item object contains x and y coordinates and a unique id.', done => {
-      const testItem = new Collectible({ x: 100, y: 100, id: Date.now() });
+    test('should contain x and y coordinates and a unique id.', function(done) {
+      const testItem = new Collectible({
+        x: 100,
+        y: 100,
+        id: Date.now()
+      });
 
+      // console.log(testItem);
       assert.typeOf(testItem.x, 'Number');
       assert.typeOf(testItem.y, 'Number');
       assert.exists(testItem.id);
@@ -42,17 +43,28 @@ suite('Unit Tests', () => {
     });
   });
 
-  suite('Player class', () => {
-    test('Player class generates a player object.', done => {
-      const testPlayer = new Player({ x: 100, y: 100, score: 0, id: Date.now() });
+  suite('Player class', function() {
+    test('should generate a player object.', function(done) {
+      const testPlayer = new Player({
+        x: 100,
+        y: 100,
+        score: 0,
+        id: Date.now()
+      });
 
       assert.isObject(testPlayer);
       done();
     });
 
-    test('Player object contains a score, x and y coordinates, and a unique id.', done => {
-      const testPlayer = new Player({ x: 100, y: 100, score: 0, id: Date.now() });
+    test('should contain a score, x and y coordinates, and a unique id.', function(done) {
+      const testPlayer = new Player({
+        x: 100,
+        y: 100,
+        score: 0,
+        id: Date.now()
+      });
 
+      // console.log(testPlayer);
       assert.typeOf(testPlayer.x, 'Number');
       assert.typeOf(testPlayer.y, 'Number');
       assert.typeOf(testPlayer.score, 'Number');
@@ -60,10 +72,16 @@ suite('Unit Tests', () => {
       done();
     });
 
-    test("movePlayer(str, num) adjusts a player's position.", done => {
+    test("movePlayer(str, num) should adjust a player's position.", function(done) {
       // Note: Only testing movement along the x axis in case
       // the game is a 2D platformer
-      const testPlayer = new Player({ x: 100, y: 100, score: 0, id: Date.now() });
+      const testPlayer = new Player({
+        x: 100,
+        y: 100,
+        score: 0,
+        id: Date.now()
+      });
+
       testPlayer.movePlayer('right', 5);
       const testPos1 = { x: testPlayer.x, y: testPlayer.y }
       const expectedPos1 = { x: 105, y: 100 }
@@ -77,7 +95,7 @@ suite('Unit Tests', () => {
       done();
     });
 
-    test("collision(obj) returns true when a player's avatar collides with a collectible item object.", done => {
+    test("collision(obj) should return true when a player's avatar collides with a collectible item object.", function(done) {
       const testPlayer = new Player({ x: 100, y: 100, id: Date.now() });
       const testItem = new Collectible({ x: 100, y: 100, value: 1, id: Date.now() });
 
@@ -85,7 +103,7 @@ suite('Unit Tests', () => {
       done();
     });
 
-    test("calculateRank(arr) returns the player's rank string.", done => {
+    test("calculateRank(arr) returns the player's rank string.", function(done) {
       const testPlayer1 = new Player({ x: 100, y: 100, id: 1 });
       const testPlayer2 = new Player({ x: 150, y: 150, id: 2 });
       testPlayer1.score = 5;
