@@ -1,16 +1,14 @@
 class Collectible {
   constructor({x, y, value, id}) {
-
+    this.x = parseInt(arguments[0]['x']);
+    this.y = parseInt(arguments[0]['y']);
+    this.value = parseInt(arguments[0]['value']);
+    this.id = arguments[0]['id'];
   }
-
 }
 
-/*
-  Note: Attempt to export this for use
-  in server.js
-*/
 try {
   module.exports = Collectible;
-} catch(e) {}
+} catch(error) {}
 
 export default Collectible;
