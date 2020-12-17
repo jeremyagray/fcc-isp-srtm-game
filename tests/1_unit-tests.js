@@ -1,3 +1,5 @@
+'use strict';
+
 import Player from '../public/Player.mjs';
 import Collectible from '../public/Collectible.mjs';
 const chai = require('chai');
