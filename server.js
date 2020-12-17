@@ -1,52 +1,109 @@
+'use strict';
+
+// Load the environment variables.
 require('dotenv').config();
-const express = require('express');
+
 const bodyParser = require('body-parser');
-const expect = require('chai');
+// const cors = require('cors');
+const express = require('express');
+// const mongoose = require('mongoose');
+const nocache = require('nocache');
 const socket = require('socket.io');
 
-const fccTestingRoutes = require('./routes/fcctesting.js');
-const runner = require('./test-runner.js');
+// Middleware.
+const helmet = require('./middleware/helmet.js');
 
+// Routing.
+// const replyRoutes = require('./routes/replies.js');
+
+// FCC testing.
+const fccTestingRoutes = require('./routes/fcctesting.js');
+const runner = require('./test-runner');
+
+// Express app.
 const app = express();
 
-app.use('/public', express.static(process.cwd() + '/public'));
-app.use('/assets', express.static(process.cwd() + '/assets'));
+async function start() {
+//   // Configure mongoose.
+//   const MONGOOSE_OPTIONS = {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//     useFindAndModify: false
+//   };
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+  try {
+//     await mongoose.connect(process.env.MONGO_URI, MONGOOSE_OPTIONS);
 
-// Index page (static HTML)
-app.route('/')
-  .get(function (req, res) {
-    res.sendFile(process.cwd() + '/views/index.html');
-  }); 
-
-//For FCC testing purposes
-fccTestingRoutes(app);
+    // Helmet middleware.
+    app.use(helmet.config);
+    app.use(nocache());
+    // https://github.com/expressjs/express/issues/2477#issuecomment-67775940
+    app.use(function(request, response, next) {
+      response.setHeader('X-Powered-By', 'PHP 7.4.3');
+      next();
+    });
     
-// 404 Not Found Middleware
-app.use(function(req, res, next) {
-  res.status(404)
-    .type('text')
-    .send('Not Found');
-});
+//     // FCC testing.
+//     app.use(cors({origin: '*'}));
 
-const portNum = process.env.PORT || 3000;
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({extended: true}));
 
-// Set up server and tests
-const server = app.listen(portNum, () => {
-  console.log(`Listening on port ${portNum}`);
-  if (process.env.NODE_ENV==='test') {
-    console.log('Running Tests...');
-    setTimeout(function () {
-      try {
-        runner.run();
-      } catch (error) {
-        console.log('Tests are not valid:');
-        console.error(error);
+//     app.set('trust proxy', true);
+
+    // Set static directory.
+    app.use('/public', express.static(process.cwd() + '/public'));
+    app.use('/assets', express.static(process.cwd() + '/assets'));
+
+//     // Set view directory and view engine.
+//     app.set('views', process.cwd() + '/views');
+//     app.set('view engine', 'pug');
+
+    // Serve static index.
+    app.route('/')
+      .get(function(request, response) {
+        return response.sendFile(process.cwd() + '/views/index.html');
+      });
+
+    // FCC testing.
+    fccTestingRoutes(app);
+
+    // Application routes.
+    // app.use('/api/threads', threadRoutes);
+    // app.use('/api/replies', replyRoutes);
+    
+    // 404 middleware.
+    app.use((request, response) => {
+      return response
+        .status(404)
+        .render('404');
+    });
+
+    // Run server and/or tests.
+    const port = process.env.PORT || 3000;
+    const name = 'fcc-isp-srtm-game';
+    const version = '0.0.1';
+
+    app.listen(port, function () {
+      console.log(`${name}@${version} listening on port ${port}...`);
+      if (process.env.NODE_ENV ==='test') {
+        console.log(`${name}@${version} running unit and functional tests...`);
+        setTimeout(function () {
+          try {
+            runner.run();
+          } catch (error) {
+            console.log(`${name}@${version}:  some tests failed:`);
+            console.error(error);
+          }
+        }, 1500);
       }
-    }, 1500);
-  }
-});
+    });
 
-module.exports = app; // For testing
+    // Export app for testing.
+    module.exports = app;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+(async function() { await start(); })();
