@@ -1,13 +1,13 @@
 'use strict';
 
 class Player {
-  constructor({x, y, score, id}, speed = 1, radius = 12) {
+  constructor({x, y, score, id, speed, radius}) {
     this.x = parseInt(arguments[0]['x']);
     this.y = parseInt(arguments[0]['y']);
     this.score = parseInt(arguments[0]['score']);
     this.id = arguments[0]['id'];
-    this.speed = parseInt(speed);
-    this.radius = parseInt(radius);
+    this.speed = parseInt(arguments[0]['speed']) || 1;
+    this.radius = parseInt(arguments[0]['radius']) || 12;
     this.level = 1;
   }
 
@@ -104,5 +104,9 @@ class Player {
     return;
   }
 }
+
+export {
+  Player
+};
 
 export default Player;

@@ -1,111 +1,126 @@
 'use strict';
 
-import Player from './Player.mjs';
-import Collectible from './Collectible.mjs';
+import {Player} from './Player.mjs';
+import {Coin, Collectible} from './Collectible.mjs';
+import {Wall} from './Wall.mjs';
 
 const socket = io();
+let gameId;
+let playerId;
+let me;
+
 const canvas = document.getElementById('game-window');
 const context = canvas.getContext('2d');
 
-const width = 640;
-const height = 480;
-const bannerWidth = width;
-const bannerHeight = 60;
+// Connection event.
+socket.on('connect', () => {
+  console.log(`playerId:  ${socket.id}`);
+  playerId = socket.id;
+});
 
-let entities = {
-  'players': [],
-  'coins': [],
-  'walls': [
-    new Wall(0, bannerHeight),
-    new Wall(width, 0),
-    new Wall(0, height),
-    new Wall(0, 0)
-  ]
-};
+// Get the game ids.
+socket.on('gameIds', function(data) {
+  gameId = data['gameId'];
+  console.log('client: ', data);
+});
 
-class Wall {
-  constructor(x, y) {
-    this.x = parseInt(x);
-    this.y = parseInt(y);
-    this.radius = 0;
-  }
-}
+socket.on('gameInfo', function(data) {
+  // console.log('client: ', data);
 
-class GoldCoin extends Collectible {
-  constructor() {
-    super({
-      x: 100,
-      y: 200,
-      value: 10,
-      id: Date.now()
+  // Draw the background.
+  context.fillStyle = 'black';
+  context.fillRect(data.top, data.left, data.right, data.bottom);
+
+  // Draw the coins.
+  // {x, y, value, id, radius}
+  data.coins.map((coin) => {
+    // console.log(coin);
+    let newCoin = new Coin(coin.type, {
+      'x': coin.x,
+      'y': coin.y,
+      'id': coin.id,
     });
+    newCoin.draw();
+  });
 
-    this.name = 'gold';
-    this.color = 'gold';
-  }
-}
-
-class SilverCoin extends Collectible {
-  constructor() {
-    super({
-      x: 100,
-      y: 200,
-      value: 10,
-      id: Date.now()
+  // Draw the players.
+  // {x, y, score, id, speed, radius}
+  data.players.map((player) => {
+    // console.log(player);
+    let newPlayer = new Player({
+      'x': player.x,
+      'y': player.y,
+      'score': player.score,
+      'id': player.id,
+      'speed': player.speed,
+      'radius': player.radius
     });
+    if (newPlayer.id === playerId) {
+      newPlayer.draw();
+      me = newPlayer;
+      console.log(me.score);
+    } else {
+      newPlayer.draw('red', '&');
+    }
+  });
+});
 
-    this.name = 'silver';
-    this.color = 'silver';
-  }
-}
+socket.on('spells', (data) => {
+  console.log(`Someone cast a ${data.spell} spell!`);
+});
 
-class BronzeCoin extends Collectible {
-  constructor() {
-    super({
-      x: 100,
-      y: 200,
-      value: 10,
-      id: Date.now()
-    });
+// socket.emit('getGameIds', {'socketId': socket.id});
 
-    this.name = 'bronze';
-    this.color = '#b08d57';
-  }
-}
+// const width = 640;
+// const height = 480;
+// const bannerWidth = width;
+// const bannerHeight = 60;
 
-// Draw the background.
-context.fillStyle = 'black';
-context.fillRect(0, 0, 640, 480);
+// let entities = {
+//   'players': [],
+//   'coins': [],
+//   'walls': [
+//     new Wall(0, bannerHeight),
+//     new Wall(width, 0),
+//     new Wall(0, height),
+//     new Wall(0, 0)
+//   ]
+// };
 
-context.strokeStyle = 'green';
-context.strokeRect(0, 0, 640, 60);
+// // Draw the background.
+// context.fillStyle = 'black';
+// context.fillRect(0, 0, 640, 480);
 
-let me = new Player({x: 20, y: 80, score: 0, id: Date.now()});
-me.draw();
-let him = new Player({x: 620, y: 460, score: 0, id: Date.now()});
-him.draw('red', '&');
+// context.strokeStyle = 'green';
+// context.strokeRect(0, 0, 640, 60);
 
-// Draw some coins.
-let gc = new GoldCoin();
-gc.move(100, 80);
-gc.draw();
+// let me = new Player({x: 20, y: 80, score: 0, id: Date.now()});
+// me.draw();
+// let him = new Player({x: 620, y: 460, score: 0, id: Date.now()});
+// him.draw('red', '&');
 
-let sc = new SilverCoin();
-sc.move(120, 80);
-sc.draw();
+// // Draw some coins.
+// let gc = new Coin('gold');
+// gc.move(100, 80);
+// gc.draw();
 
-let bc = new BronzeCoin();
-bc.move(140, 80);
-bc.draw();
+// let sc = new Coin('silver');
+// sc.move(120, 80);
+// sc.draw();
+
+// let bc = new Coin();
+// bc.move(140, 80);
+// // bc.place();
+// bc.draw();
 
 // Draw some text.
-context.fillStyle = 'green';
-context.font = '48px Calibri';
-context.fillText('coinhack',
-                 320,
-                 30);
+// context.fillStyle = 'green';
+// context.font = '48px Calibri';
+// context.fillText('coinhack',
+//                  320,
+//                  30);
 
-// Player movement function.
+// Player controls.
 document.addEventListener('keydown', (event) => {
   const keyName = event.key;
 
@@ -114,65 +129,123 @@ document.addEventListener('keydown', (event) => {
   switch (keyName) {
   case 'Q':
   case 'q':
-    me.blank();
+    // me.blank();
     me.move('up');
     me.move('left');
-    me.draw();
+    // me.draw();
+    socket.emit('playerMove', {
+      'x': me.x,
+      'y': me.y,
+      'score': me.score,
+      'id': me.id,
+      'speed': me.speed,
+      'radius': me.radius
+    });
     break;
 
   case 'W':
   case 'w':
-    me.blank();
+  case 'ArrowUp':
     console.log('up');
     me.move('up');
-    me.draw();
+    socket.emit('playerMove', {
+      'x': me.x,
+      'y': me.y,
+      'score': me.score,
+      'id': me.id,
+      'speed': me.speed,
+      'radius': me.radius
+    });
     break;
 
   case 'E':
   case 'e':
-    me.blank();
     me.move('up');
     me.move('right');
-    me.draw();
+    socket.emit('playerMove', {
+      'x': me.x,
+      'y': me.y,
+      'score': me.score,
+      'id': me.id,
+      'speed': me.speed,
+      'radius': me.radius
+    });
     break;
 
   case 'D':
   case 'd':
-    me.blank();
+  case 'ArrowRight':
     me.move('right');
-    me.draw();
+    socket.emit('playerMove', {
+      'x': me.x,
+      'y': me.y,
+      'score': me.score,
+      'id': me.id,
+      'speed': me.speed,
+      'radius': me.radius
+    });
     break;
 
   case 'C':
   case 'c':
-    me.blank();
     me.move('down');
     me.move('right');
-    me.draw();
+    socket.emit('playerMove', {
+      'x': me.x,
+      'y': me.y,
+      'score': me.score,
+      'id': me.id,
+      'speed': me.speed,
+      'radius': me.radius
+    });
     break;
 
   case 'S':
   case 's':
   case 'X':
   case 'x':
-    me.blank();
+  case 'ArrowDown':
     me.move('down');
-    me.draw();
+    socket.emit('playerMove', {
+      'x': me.x,
+      'y': me.y,
+      'score': me.score,
+      'id': me.id,
+      'speed': me.speed,
+      'radius': me.radius
+    });
     break;
 
   case 'Z':
   case 'z':
-    me.blank();
     me.move('down');
     me.move('left');
-    me.draw();
+    socket.emit('playerMove', {
+      'x': me.x,
+      'y': me.y,
+      'score': me.score,
+      'id': me.id,
+      'speed': me.speed,
+      'radius': me.radius
+    });
     break;
 
   case 'A':
   case 'a':
-    me.blank();
+  case 'ArrowLeft':
     me.move('left');
-    me.draw();
+    socket.emit('playerMove', {
+      'x': me.x,
+      'y': me.y,
+      'score': me.score,
+      'id': me.id,
+      'speed': me.speed,
+      'radius': me.radius
+    });
+    break;
+
+  case 'f':
+    socket.emit('spells', {'spell': 'freeze'});
     break;
 
   default:
