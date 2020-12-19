@@ -57,5 +57,5 @@
     "start": "nodemon server.js",
     "test": "PORT=3005 mocha --require @babel/register --recursive --exit --ui tdd tests"
   },
-  "version": "0.0.1"
+  "version": "0.1.0"
 }
