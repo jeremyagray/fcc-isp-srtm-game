@@ -81,11 +81,12 @@ const gameInfo = {
 exports.initialize = function(i, s) {
   io = i;
   socket = s;
+
   console.log('server: A player connected.');
   console.log('server: ', {'gameId': gameId, 'socketId': socket.id});
-  socket.emit('gameIds', {'gameId': gameId, 'socketId': socket.id});
+  io.emit('gameIds', {'gameId': gameId, 'socketId': socket.id});
   gameInfo.players.push(spawnPlayer(socket.id));
-  socket.emit('gameInfo', gameInfo);
+  io.emit('gameInfo', gameInfo);
 
   // Events.
   socket.on('getGameIds', getGameIds);
@@ -139,13 +140,8 @@ exports.initialize = function(i, s) {
     gameInfo.players[player].speed = 1 + Math.floor(gameInfo.players[player].score / 10);
 
     // Update clients.
-    socket.emit('gameInfo', gameInfo);
+    io.emit('gameInfo', gameInfo);
   });
-
-  // socket.on('getGameBounds', getGameBounds);
-  // socket.on('gotCoin', (data) => {
-  //   gotCoin(data);
-  // })
 
   return;
 }
