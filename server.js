@@ -8,7 +8,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 // const mongoose = require('mongoose');
 const nocache = require('nocache');
-const io = require('socket.io');
+const game = require('./controllers/coinhack.js');
 
 // Middleware.
 const helmet = require('./middleware/helmet.js');
@@ -53,11 +53,15 @@ async function start() {
 
     // Set static directory.
     app.use('/public', express.static(process.cwd() + '/public'));
-    app.use('/assets', express.static(process.cwd() + '/assets'));
 
     // Set view directory and view engine.
-    app.set('views', process.cwd() + '/views');
+    app.set('views', './views');
     app.set('view engine', 'pug');
+
+    app.route('/views/:page')
+      .get(function(request, response) {
+        return response.render(request.params.page);
+      });
 
     // Serve static index.
     app.route('/')
@@ -69,7 +73,6 @@ async function start() {
     fccTestingRoutes(app);
 
     // Application routes.
-    // app.use('/api/threads', threadRoutes);
     // app.use('/api/replies', replyRoutes);
     
     // 404 middleware.
@@ -99,8 +102,12 @@ async function start() {
       }
     });
 
-    // Connect socket.
-    io.listen(server);
+    // Initialize socket.io and game server.
+    const io = require('socket.io')(server);
+
+    io.on('connection', function(socket) {
+      game.initialize(io, socket);
+    });
 
     // Export app for testing.
     module.exports = app;
